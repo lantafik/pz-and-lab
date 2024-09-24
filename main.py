@@ -1,5 +1,7 @@
 from back import *
 
+
+
 a, b, c = map(float, input('Введите коэффициенты a, b, c ').split())
 
 d = get_math_text(a, b, c)
