@@ -1,0 +1,199 @@
+import sys
+import os
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QTabWidget, QVBoxLayout,
+                             QPushButton, QLabel, QTextEdit, QFileDialog, QLineEdit,
+                             QFormLayout, QListWidget)
+from PyQt6.QtCore import Qt
+
+class MainWindow(QMainWindow):
+    def init(self):
+        super().init()
+
+        self.setWindowTitle("Приложение с вкладками")
+
+        # Создаем центральный виджет и главный контейнер для всех вкладок
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        self.layout = QVBoxLayout(self.central_widget)
+
+        # Создаем объект вкладок
+        self.tabs = QTabWidget()
+        self.layout.addWidget(self.tabs)
+
+        # Добавляем вкладки через соответствующие функции
+        self.tab1 = self.create_tab1()  # Вкладка для сканирования папки
+        self.tab2 = self.create_tab2()  # Вкладка для открытия текстового файла
+        self.tab3 = self.create_tab3()  # Вкладка для сохранения текста
+        self.tab4 = self.create_tab4()  # Вкладка с формой
+        self.tab5 = self.create_tab5()  # Вкладка для чтения списка из файла
+
+        # Добавляем вкладки в интерфейс
+        self.tabs.addTab(self.tab1, "Сканировать папку")
+        self.tabs.addTab(self.tab2, "Открыть текстовый файл")
+        self.tabs.addTab(self.tab3, "Сохранить текст")
+        self.tabs.addTab(self.tab4, "Форма ввода")
+        self.tabs.addTab(self.tab5, "Чтение списка")
+
+    # Вкладка 1: Сканирование папки и вывод списка файлов
+    def create_tab1(self):
+        tab = QWidget()  # Создаем виджет для вкладки
+        layout = QVBoxLayout()  # Используем вертикальный компоновщик для размещения элементов
+
+        # Создаем виджеты
+        self.folder_label = QLabel("Папка не выбрана")  # Метка, показывающая выбранную папку
+        self.file_list = QListWidget()  # Список для отображения файлов
+        self.scan_button = QPushButton("Сканировать папку")  # Кнопка для сканирования папки
+
+        # Привязываем кнопку к функции сканирования
+        self.scan_button.clicked.connect(self.scan_folder)
+
+        # Добавляем виджеты в компоновщик
+        layout.addWidget(self.folder_label)
+        layout.addWidget(self.file_list)
+        layout.addWidget(self.scan_button)
+
+        tab.setLayout(layout)  # Устанавливаем компоновку для вкладки
+        return tab
+
+    # Функция для сканирования папки и вывода списка файлов
+    def scan_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Выберите папку")  # Открытие диалога для выбора папки
+        if folder:
+            self.folder_label.setText(f"Папка: {folder}")  # Отображение пути к папке
+            self.file_list.clear()  # Очистка списка перед обновлением
+            for file_name in os.listdir(folder):  # Получение списка файлов в папке
+                self.file_list.addItem(file_name)  # Добавление каждого файла в список
+
+    # Вкладка 2: Открытие и редактирование текстового файла
+    def create_tab2(self):
+        tab = QWidget()  # Создаем виджет для вкладки
+        layout = QVBoxLayout()  # Вертикальная компоновка
+
+        # Создаем текстовое поле для редактирования текста
+        self.text_edit = QTextEdit()
+
+        # Кнопка для открытия файла
+        self.open_button = QPushButton("Открыть файл")
+
+        # Привязываем кнопку к функции открытия файла
+        self.open_button.clicked.connect(self.open_file)
+
+        # Добавляем текстовое поле и кнопку в компоновщик
+        layout.addWidget(self.text_edit)
+        layout.addWidget(self.open_button)
+
+        tab.setLayout(layout)  # Устанавливаем компоновку для вкладки
+        return tab
+
+
+# Функция для открытия файла и вывода его содержимого в текстовое поле
+    def open_file(self):
+        file_name, _ = QFileDialog.getOpenFileName(self, "Открыть файл", "", "Text Files (*.txt)")  # Открытие диалога выбора файла
+        if file_name:
+            with open(file_name, 'r', encoding='utf-8') as file:  # Чтение содержимого файла
+                self.text_edit.setText(file.read())  # Заполнение текстового поля содержимым файла
+
+    # Вкладка 3: Сохранение текста в файл
+    def create_tab3(self):
+        tab = QWidget()  # Создаем виджет для вкладки
+        layout = QVBoxLayout()  # Вертикальная компоновка
+
+        # Текстовое поле для ввода текста
+        self.save_text_edit = QTextEdit()
+
+        # Кнопка для сохранения текста в файл
+        self.save_button = QPushButton("Сохранить текст")
+
+        # Привязываем кнопку к функции сохранения файла
+        self.save_button.clicked.connect(self.save_file)
+
+        # Добавляем текстовое поле и кнопку в компоновку
+        layout.addWidget(self.save_text_edit)
+        layout.addWidget(self.save_button)
+
+        tab.setLayout(layout)  # Устанавливаем компоновку для вкладки
+        return tab
+
+    # Функция для сохранения текста из поля в файл
+    def save_file(self):
+        file_name, _ = QFileDialog.getSaveFileName(self, "Сохранить файл", "", "Text Files (*.txt)")  # Диалог сохранения файла
+        if file_name:
+            with open(file_name, 'w', encoding='utf-8') as file:  # Открытие файла для записи
+                file.write(self.save_text_edit.toPlainText())  # Запись текста из текстового поля в файл
+
+    # Вкладка 4: Форма для ввода данных с несколькими полями
+    def create_tab4(self):
+        tab = QWidget()  # Создаем виджет для вкладки
+        layout = QFormLayout()  # Формат для расположения полей ввода
+
+        # Создаем словарь для хранения полей ввода
+        self.fields = {}
+        for i in range(5):
+            label = f"Поле {i+1}"  # Метка для каждого поля
+            field = QLineEdit()  # Поле ввода текста
+            self.fields[label] = field  # Сохраняем поле в словарь
+            layout.addRow(label, field)  # Добавляем метку и поле ввода в форму
+
+        # Кнопка для сохранения данных формы
+        self.save_form_button = QPushButton("Сохранить данные формы")
+
+        # Привязываем кнопку к функции сохранения формы
+        self.save_form_button.clicked.connect(self.save_form)
+
+        # Добавляем кнопку в компоновку
+        layout.addWidget(self.save_form_button)
+
+        tab.setLayout(layout)  # Устанавливаем компоновку для вкладки
+        return tab
+
+    # Функция для сохранения данных из формы в файл
+    def save_form(self):
+        file_name, _ = QFileDialog.getSaveFileName(self, "Сохранить данные формы", "", "Text Files (*.txt)")  # Диалог для сохранения файла
+        if file_name:
+            with open(file_name, 'a', encoding='utf-8') as file:  # Открытие файла для добавления данных
+                for label, field in self.fields.items():  # Перебираем все поля формы
+                    file.write(f"{label}: {field.text()}\n")  # Записываем в файл метку и значение поля
+
+    # Вкладка 5: Чтение списка из файла
+    def create_tab5(self):
+        tab = QWidget()  # Создаем виджет для вкладки
+        layout = QVBoxLayout()  # Вертикальная компоновка
+
+        # Виджет для отображения списка
+        self.list_widget = QListWidget()
+
+        # Кнопка для загрузки списка из файла
+        self.load_button = QPushButton("Загрузить список")
+
+        # Метка для вывода информации о количестве элементов в списке
+        self.info_label = QLabel()
+
+        # Привязываем кнопку к функции загрузки списка
+        self.load_button.clicked.connect(self.load_list)
+
+        # Добавляем элементы в компоновку
+        layout.addWidget(self.list_widget)
+        layout.addWidget(self.load_button)
+        layout.addWidget(self.info_label)
+
+        tab.setLayout(layout)  # Устанавливаем компоновку для вкладки
+        return tab
+
+# Функция для загрузки списка из файла и отображения его в интерфейсе
+    def load_list(self):
+        file_name, _ = QFileDialog.getOpenFileName(self, "Загрузить список", "", "Text Files (*.txt)")  # Диалог для открытия файла
+        if file_name:
+            with open(file_name, 'r', encoding='utf-8') as file:  # Открываем файл для чтения
+                lines = file.readlines()  # Читаем все строки из файла
+                self.list_widget.clear()  # Очищаем список перед добавлением новых элементов
+                self.list_widget.addItems(lines)  # Добавляем строки из файла в список
+                self.info_label.setText(f"Количество элементов: {len(lines)}")  # Отображаем количество элементов
+                if len(lines) > 1:
+                    second_line = lines[1].strip()  # Извлекаем вторую строку
+                    self.info_label.setText(f"Поле 2: {second_line}")  # Отображаем вторую строку
+
+if name == "main":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
