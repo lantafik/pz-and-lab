@@ -54,20 +54,6 @@ messages_dict = {
 # Файл для случайных сообщений по таймеру
 file_path = 'йоу.txt'
 
-# Функция для записи сообщения в файл
-def save_message_to_file(user_id, username, text):
-    # Формируем имя файла по текущей дате
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    file_name = os.path.join(history_folder, f"history_{current_date}.txt")
-
-    # Форматируем строку сообщения
-    timestamp = datetime.now().strftime("%H:%M:%S")
-    message_line = f"[{timestamp}] {username} (ID: {user_id}): {text}\n"
-
-    # Записываем сообщение в файл
-    with open(file_name, "a", encoding="utf-8") as file:
-        file.write(message_line)
-
 # Функция для сохранения сообщения в базу данных
 def save_message_to_db(user_id, username, text):
     cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
@@ -115,7 +101,9 @@ def send_random_message_periodically(chat_id, interval=10):
 def start_timer_message(message):
     chat_id = message.chat.id
     interval = 10  # секунды, можно изменить
-    threading.Thread(target=send_random_message_periodically, args=(chat_id, interval), daemon=True).start()
+    for i in range(5):
+        threading.Thread(target=send_random_message_periodically, args=(chat_id, interval), daemon=True).start()
+
 
 @bot.message_handler(commands=['game'])
 def start_game(message):

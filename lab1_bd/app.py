@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session, flash
 import os
 import threading
 import pymysql
@@ -15,12 +15,93 @@ db_config = {
 
 # Flask-приложение
 app = Flask(__name__)
+app.secret_key = "your_secret_key_here"  # Секретный ключ для сессий
 
-FILE_PATH = "йоу.txt"
+# Функция для подключения к базе данных
+def get_db_connection():
+    return pymysql.connect(**db_config)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if 'username' in session:
+        return render_template('index.html')
+    return "<h1>Добро пожаловать на сайт!</h1><a href='/login'>Войти</a> или <a href='/register'>Зарегистрироваться</a>"
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        if not username or not password:
+            flash('Имя пользователя и пароль обязательны!', 'error')
+            return render_template('register.html')
+
+        if password != confirm_password:
+            flash('Пароли не совпадают!', 'error')
+            return render_template('register.html')
+
+        try:
+            conn = get_db_connection()
+            with conn.cursor() as cursor:
+                # Проверяем, существует ли пользователь
+                cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+                if cursor.fetchone():
+                    flash('Пользователь уже существует!', 'error')
+                    return render_template('register.html')
+
+                # Добавляем пользователя
+                cursor.execute(
+                    "INSERT INTO users (username, password) VALUES (%s, %s)",
+                    (username, password)
+                )
+                conn.commit()
+                flash('Регистрация успешна! Теперь вы можете войти.', 'success')
+                return redirect('/login')
+        except Exception as e:
+            flash(f'Ошибка регистрации: {e}', 'error')
+            return render_template('register.html')
+        finally:
+            conn.close()
+
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        try:
+            conn = get_db_connection()
+            with conn.cursor() as cursor:
+                # Проверяем пользователя
+                cursor.execute(
+                    "SELECT id FROM users WHERE username = %s AND password = %s",
+                    (username, password)
+                )
+                user = cursor.fetchone()
+                if user:
+                    session['username'] = username
+                    flash('Вы успешно вошли!', 'success')
+                    return redirect('/')
+                else:
+                    flash('Неверное имя пользователя или пароль!', 'error')
+        except Exception as e:
+            flash(f'Ошибка входа: {e}', 'error')
+        finally:
+            conn.close()
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    flash('Вы вышли из системы.', 'success')
+    return redirect('/')
+
+FILE_PATH = "йоу.txt"
 
 @app.route('/view_commands')
 def view_commands():
